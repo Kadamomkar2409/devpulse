@@ -1,0 +1,23 @@
+{
+  "name": "devpulse-backend",
+  "version": "1.0.0",
+  "description": "DevPulse - Scalable Multi-Tenant Task & Workspace Management Engine Backend API",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --max-old-space-size=4096 server.js",
+    "dev": "nodemon server.js",
+    "seed": "node --max-old-space-size=4096 seeds/seedData.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.8.4",
+    "morgan": "^1.10.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

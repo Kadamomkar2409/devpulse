@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Production build artifacts
+dist/
+build/
+
+# Environment configurations (secrets)
+.env
+.env.*
+!.env.example
+
+# Vercel deployment metadata
+.vercel/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
