@@ -1,14 +1,16 @@
 import dns from 'node:dns';
 import mongoose from 'mongoose';
 
-// Ensure reliable SRV DNS resolution for MongoDB Atlas across local routers/Windows DNS
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
-} catch {
-  // Gracefully fallback to default system DNS
+// Ensure reliable SRV DNS resolution for MongoDB Atlas across local routers/Windows DNS in dev
+if (process.env.NODE_ENV !== 'production') {
+  if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+  }
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+  } catch {
+    // Gracefully fallback to default system DNS
+  }
 }
 
 /**

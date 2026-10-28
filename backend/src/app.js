@@ -14,6 +14,11 @@ import { AppError } from './utils/AppError.js';
 
 const app = express();
 
+// Establish and cache Mongoose connection on cold start
+connectDB().catch((err) => {
+  console.warn('[DB Cold Start Warning]', err.message);
+});
+
 // Configure CORS using CLIENT_URL (stripped of any trailing slash) plus localhost:5173 for local dev
 const clientUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/+$/, '') : null;
 
@@ -54,6 +59,9 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (err) {
+    if (req.path === '/api/v1/health') {
+      return next();
+    }
     next(err);
   }
 });
