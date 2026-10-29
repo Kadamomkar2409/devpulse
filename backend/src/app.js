@@ -24,6 +24,8 @@ const clientUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/+$/
 
 const allowedOrigins = [
   clientUrl,
+  'https://devpulse-frontend-nine.vercel.app',
+  'https://devpulse-frontend-nitro-a214.vercel.app',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
 ].filter(Boolean);

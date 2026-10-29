@@ -1,20 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 
-const DEFAULT_WORKSPACE = {
-  _id: 'default-acme-id',
-  name: 'Acme Engineering',
-  slug: 'acme-eng',
-  description: 'High-throughput platform & core services engineering team.',
-  members: [
-    { name: 'Sarah Lead', email: 'lead@acme.com', role: 'owner' },
-    { name: 'Alex Rivera', email: 'alex@acme.com', role: 'admin' },
-    { name: 'Omkar Kadam', email: 'omkar@acme.com', role: 'member' },
-  ],
-};
-
 export const useWorkspace = (slug = 'acme-eng') => {
-  const [workspace, setWorkspace] = useState(DEFAULT_WORKSPACE);
+  const [workspace, setWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -34,12 +22,11 @@ export const useWorkspace = (slug = 'acme-eng') => {
         if (listRes.data?.data && listRes.data.data.length > 0) {
           setWorkspace(listRes.data.data[0]);
         } else {
-          // If no workspace in DB yet, create or keep default
-          setWorkspace(DEFAULT_WORKSPACE);
+          setWorkspace(null);
         }
       } catch (innerErr) {
-        // Fallback to default in offline / transient mode
-        setWorkspace(DEFAULT_WORKSPACE);
+        setError(innerErr.message || 'Failed to load workspace');
+        setWorkspace(null);
       }
     } finally {
       setLoading(false);
@@ -47,10 +34,49 @@ export const useWorkspace = (slug = 'acme-eng') => {
   }, [slug]);
 
   useEffect(() => {
-    fetchWorkspace();
-  }, [fetchWorkspace]);
+    let ignore = false;
+
+    const loadWorkspace = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.get(`/workspaces/${slug}`);
+        if (!ignore && res.data?.data) {
+          setWorkspace(res.data.data);
+        }
+      } catch (err) {
+        if (ignore) return;
+        try {
+          const listRes = await api.get('/workspaces');
+          if (!ignore && listRes.data?.data && listRes.data.data.length > 0) {
+            setWorkspace(listRes.data.data[0]);
+          } else if (!ignore) {
+            setWorkspace(null);
+          }
+        } catch (innerErr) {
+          if (!ignore) {
+            setError(innerErr.message || 'Failed to load workspace');
+            setWorkspace(null);
+          }
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadWorkspace();
+
+    return () => {
+      ignore = true;
+    };
+  }, [slug]);
 
   const addMember = async (memberData) => {
+    if (!workspace?.slug) {
+      throw new Error('Workspace not loaded yet.');
+    }
     const res = await api.post(`/workspaces/${workspace.slug}/members`, memberData);
     if (res.data?.data) {
       setWorkspace(res.data.data);

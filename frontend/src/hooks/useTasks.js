@@ -10,6 +10,9 @@ export const useTasks = (workspaceId, filters = {}) => {
   // Keep ref of previous tasks for rollback on error
   const prevTasksRef = useRef([]);
 
+  const filtersKey = JSON.stringify(filters);
+
+  // Manual refetch handler (e.g. after task creation or mutation)
   const fetchTasks = useCallback(async () => {
     if (!workspaceId) return;
     setLoading(true);
@@ -31,11 +34,51 @@ export const useTasks = (workspaceId, filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [workspaceId, JSON.stringify(filters)]);
+  }, [workspaceId, filtersKey]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    // Guard: Do not fetch until a valid workspace id is available
+    if (!workspaceId) {
+      setTasks([]);
+      setLoading(true);
+      return;
+    }
+
+    let ignore = false;
+
+    const runFetch = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.get(`/workspaces/${workspaceId}/tasks`, {
+          params: { limit: 50, ...filters },
+        });
+        if (ignore) return;
+        const data = response.data?.data;
+        if (data && Array.isArray(data.tasks)) {
+          setTasks(data.tasks);
+          prevTasksRef.current = data.tasks;
+          if (data.pagination) setPagination(data.pagination);
+        } else {
+          setTasks([]);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setError(err.message || 'Failed to fetch tasks');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    runFetch();
+
+    return () => {
+      ignore = true;
+    };
+  }, [workspaceId, filtersKey]);
 
   // Optimistic status update with instant UI reflection (AC-3)
   const updateTaskStatus = async (taskId, newStatus) => {
@@ -76,7 +119,7 @@ export const useTasks = (workspaceId, filters = {}) => {
 
   return {
     tasks,
-    loading,
+    loading: !workspaceId || loading,
     error,
     pagination,
     refetch: fetchTasks,

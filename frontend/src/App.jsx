@@ -150,7 +150,7 @@ export default function App() {
       >
         <TaskBoard
           tasks={tasks}
-          loading={tasksLoading}
+          loading={workspaceLoading || tasksLoading || !workspace?._id}
           priorityFilter={priorityFilter}
           onPriorityFilterChange={setPriorityFilter}
           pagination={pagination}
